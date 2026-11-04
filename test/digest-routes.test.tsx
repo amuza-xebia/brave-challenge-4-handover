@@ -73,7 +73,7 @@ describe('GET /digest/:night', () => {
     const html = await res.text();
     expect(res.status).toBe(200);
     for (const j of jobsSorted) expect(html).toContain(j);
-    expect(html).toContain("didn't parse");
+    expect(html).toMatch(/didn(?:'|&#39;)t parse/); // hono escapes the apostrophe
   });
 });
 
