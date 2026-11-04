@@ -1,0 +1,45 @@
+# Plan morning-digest § 3/§ 4 (ADR 0003): publish one page of rig as a static preview on
+# GitHub Pages. The HTML is built here and uploaded as a Pages artifact, so it never lands in
+# git. Run with marker=true for the review copy, then marker=false to upload over the same link.
+name: preview
+on:
+  workflow_dispatch:
+    inputs:
+      night:
+        description: night to save
+        default: '2026-10-28'
+      marker:
+        description: show this lane's marker in the banner
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npx --yes pnpm@12.16.1 install --frozen-lockfile
+      - name: save the page
+        env:
+          LANE_MARKER: ${{ inputs.marker && secrets.LANE_MARKER || '' }}
+        run: scripts/save-preview.sh "${{ inputs.night }}" var/preview/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: var/preview
+      - id: deployment
+        uses: actions/deploy-pages@v4
